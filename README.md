@@ -18,12 +18,8 @@ Este repositorio contiene una simulación interactiva del sistema solar desarrol
 - Texturizado básico de cuerpos celestes
 - Control de cámara y navegación en la escena 3D
 
-## 📁 Estructura del repositorio (opcional)
+## 📁 Estructura del repositorio
 
-/src # Código fuente principal
-/assets # Texturas y recursos gráficos
-/include # Headers y librerías externas
-/shaders # Archivos GLSL
 
 ## 🎓 Créditos
 
