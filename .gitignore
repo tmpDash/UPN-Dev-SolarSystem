@@ -1,6 +1,7 @@
 # Visual Studio
 .vscode/
 .vs/
+*.*/
 *.vcxproj*
 *.sln
 *.suo
