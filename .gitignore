@@ -1,0 +1,70 @@
+# Visual Studio
+.vscode/
+.vs/
+*.vcxproj*
+*.sln
+*.suo
+*.user
+*.userosscache
+*.obj
+*.pdb
+*.idb
+*.ipch
+*.aps
+*.ncb
+*.opensdf
+*.sdf
+*.cachefile
+*.dbmdl
+*.log
+*.tlog
+*.lastbuildstate
+*.tmp
+*.bak
+*.ilk
+*.log
+*.pch
+
+# Build outputs
+/bin/
+/build/
+/x64/
+/Debug/
+/Release/
+/out/
+/*.exe
+/*.dll
+/*.lib
+/*.exp
+
+# CMake (si llegas a usarlo)
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+# Otros archivos temporales
+*.class
+*.swp
+*.swo
+*~
+*.DS_Store
+Thumbs.db
+
+# STB image output
+stb_image.o
+stb_image.obj
+
+# Archivos personales o temporales
+*.iml
+.idea/
+*.gch
+
+# Archivos de configuración local
+*.local
+*.env
+.env.*
+
+# Carpetas de dependencias descargadas (si llegas a usarlas)
+deps/
+external/
