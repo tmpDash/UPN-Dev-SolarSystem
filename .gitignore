@@ -1,71 +1,97 @@
-# Visual Studio
+# Archivos de Visual Studio y carpetas de IDE
 .vscode/
 .vs/
-*.*/
-*.vcxproj*
-*.sln
+# Archivos de la solución y proyecto principal - DEBEN SER VERSIONADOS
+# NO IGNORAR: *.sln, *.csproj, *.vbproj, *.vcxproj (solo el principal)
+
+# Archivos de usuario, configuración temporal y cachés generados por VS
 *.suo
 *.user
 *.userosscache
+*.opensdf
+*.sdf
+*.cachefile
+*.dbmdl
+
+# Archivos temporales y de compilación
 *.obj
 *.pdb
 *.idb
 *.ipch
 *.aps
 *.ncb
-*.opensdf
-*.sdf
-*.cachefile
-*.dbmdl
 *.log
 *.tlog
 *.lastbuildstate
 *.tmp
 *.bak
 *.ilk
-*.log
 *.pch
+*.scc
+*.vspscc # Archivos de Source Control para VS
 
-# Build outputs
-/bin/
-/build/
-/x64/
-/Debug/
-/Release/
-/out/
-/*.exe
-/*.dll
-/*.lib
-/*.exp
+# Archivos de filtro de proyectos (pueden ignorarse, son para organización en VS)
+*.filters
 
-# CMake (si llegas a usarlo)
+# Output de compilación
+[Dd]ebug/
+[Rr]elease/
+[Bb]in/
+[Oo]bj/
+[Cc]ompiled/
+[Dd]ll/
+[Ee]xe/
+[Tt]emp/
+[Rr]esults/
+*.exe
+*.dll
+*.lib
+*.exp
+*.o
+*.so
+*.a
+*.pdb # Asegurarse de ignorar los PDB generados en el output, no los del proyecto principal.
+
+# Paquetes NuGet
+packages/ # La carpeta donde se descargan los paquetes (no el packages.config)
+
+# SonarQube / Roslyn analyzers local files
+.sonarqube/
+.sonar/
+TestResults/ # Resultados de pruebas
+
+# Archivos de CMake (si aplica)
 CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
 Makefile
 
-# Otros archivos temporales
+# Otros archivos temporales y de sistema operativo
 *.class
 *.swp
 *.swo
 *~
-*.DS_Store
-Thumbs.db
+.DS_Store # macOS
+Thumbs.db # Windows
 
-# STB image output
+# STB image output (si aplica)
 stb_image.o
 stb_image.obj
 
-# Archivos personales o temporales
+# Archivos personales o temporales de IDEs/Editores
 *.iml
-.idea/
+.idea/ # IntelliJ / Rider
 *.gch
 
-# Archivos de configuración local
+# Archivos de configuración local (variables de entorno, settings específicos)
 *.local
 *.env
 .env.*
 
-# Carpetas de dependencias descargadas (si llegas a usarlas)
+# Carpetas de dependencias descargadas (si las manejas manualmente fuera de NuGet)
 deps/
 external/
+
+# Build artifacts (para CI/CD, si se generan fuera de bin/Debug/Release)
+artifacts/
+publish/
