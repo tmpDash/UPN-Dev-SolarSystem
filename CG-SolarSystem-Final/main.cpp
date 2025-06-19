@@ -6,6 +6,7 @@
 #include <vector>
 #include "Shader.h"
 
+// tamaño de pantalla
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
