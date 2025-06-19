@@ -9,6 +9,11 @@
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
+void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+{
+    glViewport(0, 0, width, height);
+}
+
 void createSphere(std::vector<float>& vertices, std::vector<unsigned int>& indices) {
     const float PI = 3.14159265359f;
     const int sectorCount = 36;
@@ -87,6 +92,8 @@ int main() {
         return -1;
     }
     glfwMakeContextCurrent(window);
+
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         std::cout << "Fallo al inicializar GLAD" << std::endl;
