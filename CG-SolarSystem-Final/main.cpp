@@ -6,16 +6,19 @@
 #include <vector>
 #include "Shader.h"
 
-// tamaño de pantalla
+#include <iostream>
+// tamaï¿½o de pantalla
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
+
+using namespace std;
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
     glViewport(0, 0, width, height);
 }
 
-void createSphere(std::vector<float>& vertices, std::vector<unsigned int>& indices) {
+void createSphere(vector<float>& vertices, vector<unsigned int>& indices) {
     const float PI = 3.14159265359f;
     const int sectorCount = 36;
     const int stackCount = 18;
@@ -57,24 +60,24 @@ GLuint loadTexture(const char* path) {
     GLuint textureID;
     glGenTextures(1, &textureID);
     int width, height, nrComponents;
-    unsigned char* data = stbi_load(path, &width, &height, &nrComponents, 0);
+    unsigned char* data = stbi_load(path, &width, &height, &nrComponents, 3);
     if (data) {
         GLenum format;
         if (nrComponents == 1) format = GL_RED;
         else if (nrComponents == 3) format = GL_RGB;
         else if (nrComponents == 4) format = GL_RGBA;
         glBindTexture(GL_TEXTURE_2D, textureID);
-        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, format, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        std::cout << "Textura cargada con exito: " << path << std::endl;
+        cout << "Textura cargada con exito: " << path << endl;
     }
     else {
-        std::cout << "Error al cargar la textura: " << path << std::endl;
-        std::cout << "Motivo del error (stb_image): " << stbi_failure_reason() << std::endl;
+        cout << "Error al cargar la textura: " << path << endl;
+        cout << "Motivo del error (stb_image): " << stbi_failure_reason() << endl;
     }
     stbi_image_free(data);
     return data ? textureID : 0;
@@ -88,7 +91,7 @@ int main() {
 
     GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Sistema Solar v1", NULL, NULL);
     if (window == NULL) {
-        std::cout << "Fallo al crear la ventana de GLFW" << std::endl;
+        cout << "Fallo al crear la ventana de GLFW" << endl;
         glfwTerminate();
         return -1;
     }
@@ -97,15 +100,15 @@ int main() {
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-        std::cout << "Fallo al inicializar GLAD" << std::endl;
+        cout << "Fallo al inicializar GLAD" << endl;
         return -1;
     }
     glEnable(GL_DEPTH_TEST);
 
     Shader ourShader("shaders/shader.vert", "shaders/shader.frag");
 
-    std::vector<float> sphereVertices;
-    std::vector<unsigned int> sphereIndices;
+    vector<float> sphereVertices;
+    vector<unsigned int> sphereIndices;
     createSphere(sphereVertices, sphereIndices);
 
     unsigned int sphereVAO, sphereVBO, sphereEBO;
@@ -124,9 +127,9 @@ int main() {
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
     glEnableVertexAttribArray(2); 
 
-    GLuint galaxyTexture = loadTexture("textures/galaxy.jpg");
-    GLuint sunTexture = loadTexture("textures/sun.jpg");
-    GLuint earthTexture = loadTexture("textures/earth.jpg");
+    GLuint galaxyTexture = loadTexture("textures/galaxy_2.jpg");
+    GLuint    sunTexture = loadTexture("textures/sun_2.jpg");
+    GLuint  earthTexture = loadTexture("textures/tierra.jpg");
 
     while (!glfwWindowShouldClose(window)) {
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
