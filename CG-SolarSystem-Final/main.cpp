@@ -174,7 +174,7 @@ int main() {
         marsTexture, // texture
         false,      // hasMoon
         0.0f,       // moonDistance
-        180.0f,     // moonSpeed
+        0.0f,       // moonSpeed
         0.0f,       // moonAngle
         0,          // moonTexture
         false,      // hasRing
