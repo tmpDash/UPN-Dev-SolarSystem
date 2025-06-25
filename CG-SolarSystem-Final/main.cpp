@@ -17,6 +17,12 @@ using namespace std;
 const unsigned int SCR_WIDTH = 1024;
 const unsigned int SCR_HEIGHT = 768;
 
+// Variables para control de cámara
+float cameraPitch = 0.0f;        // Ángulo vertical de la cámara (en grados)
+float pitchSpeed = 30.0f;        // Velocidad de cambio del pitch (grados por segundo)
+const float maxPitch = 80.0f;    // Límite superior del pitch
+const float minPitch = -80.0f;   // Límite inferior del pitch
+
 // Estructura para planetas
 struct Planet {
     string name;        // Nombre del planeta
@@ -42,6 +48,22 @@ void createSphere(vector<float>& vertices, vector<unsigned int>& indices);
 GLuint loadTexture(const char* path);
 void renderPlanet(Shader& shader, Planet& planet, unsigned int sphereVAO,
     const vector<unsigned int>& sphereIndices, float deltaTime);
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    // Solo procesar cuando se mantiene presionada la tecla
+    if (action == GLFW_PRESS || action == GLFW_REPEAT) {
+        if (key == GLFW_KEY_UP) {
+            cameraPitch += pitchSpeed * 0.016f; // Aproximadamente 1/60 segundo
+            if (cameraPitch > maxPitch) cameraPitch = maxPitch;
+        }
+        else if (key == GLFW_KEY_DOWN) {
+            cameraPitch -= pitchSpeed * 0.016f;
+            if (cameraPitch < minPitch) cameraPitch = minPitch;
+        }
+        else if (key == GLFW_KEY_R) {
+            cameraPitch = 0.0f;
+        }
+    }
+}
 
 int main() {
     // Inicialización GLFW y creación de ventana
@@ -58,7 +80,8 @@ int main() {
     }
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-
+    //función key_callback
+    glfwSetKeyCallback(window, key_callback);
     // Carga GLAD
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         cout << "Fallo al inicializar GLAD" << endl;
@@ -276,7 +299,28 @@ int main() {
         if (display_h == 0) display_h = 1;
 
         glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)display_w / (float)display_h, 0.1f, 100.0f);
-        glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 3.0f, 18.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)); //posición de la camara
+        // Calcular posicion de camara manteniendo distancia constante
+        float cameraDistance = 22.0f; // Distancia original
+        float pitchRad = glm::radians(cameraPitch);
+
+        // Posicion de camara con rotacion pitch alrededor del origen
+        glm::vec3 cameraPos;
+        cameraPos.x = 0.0f;
+        cameraPos.y = cameraDistance * sin(pitchRad);
+        cameraPos.z = cameraDistance * cos(pitchRad);
+
+        // Calcular vector UP dinamico para evitar gimbal lock
+        glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+        if (abs(cameraPitch) > 70.0f) {
+            // Ajustar UP vector cerca de los limites para evitar el salto
+            float factor = (90.0f - abs(cameraPitch)) / 20.0f;
+            cameraUp.y = factor;
+            cameraUp.z = (cameraPitch > 0) ? -(1.0f - factor) : (1.0f - factor);
+            cameraUp = glm::normalize(cameraUp);
+        }
+
+        // Crear matriz view
+        glm::mat4 view = glm::lookAt(cameraPos, glm::vec3(0.0f, 0.0f, 0.0f), cameraUp);
         ourShader.setMat4("projection", projection);
         ourShader.setMat4("view", view);
 
