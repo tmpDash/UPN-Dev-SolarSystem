@@ -52,6 +52,9 @@
 *.a
 *.pdb # Asegurarse de ignorar los PDB generados en el output, no los del proyecto principal.
 
+CG-SolarSystem-Final/x64/Debug/*.exe
+CG-SolarSystem-Final/enc_temp_folder/
+
 # Paquetes NuGet
 packages/ # La carpeta donde se descargan los paquetes (no el packages.config)
 
