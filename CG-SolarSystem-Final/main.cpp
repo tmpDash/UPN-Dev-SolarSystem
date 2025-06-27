@@ -1,8 +1,10 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include "dependencies/glm/glm.hpp"
-#include "dependencies/glm/gtc/matrix_transform.hpp"
-#include "dependencies/glm/gtc/type_ptr.hpp"
+
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 #include <vector>
 #include "Shader.h"
 #include <iostream>
@@ -280,6 +282,10 @@ int main() {
     float deltaTime = 0.0f;
     float lastFrame = 0.0f;
 
+    // Variables para la rotación del Sol
+    float sunRotationAngle = 0.0f;   // <-- NUEVO
+    float sunRotationSpeed = 5.0f;   // <-- NUEVO: Velocidad lenta (grados/seg)
+
     // Bucle principal
     while (!glfwWindowShouldClose(window)) {
         // Cálculo del tiempo
@@ -336,9 +342,11 @@ int main() {
 
         // Renderizado del sol
         glm::mat4 model_sun = glm::mat4(1.0f);
+        model_sun = glm::rotate(model_sun, glm::radians(sunRotationAngle), glm::vec3(0.0f, 1.0f, 0.0f)); // <-- NUEVO
         model_sun = glm::scale(model_sun, glm::vec3(1.0f, 1.0f, 1.0f));
         ourShader.setMat4("model", model_sun);
         glBindTexture(GL_TEXTURE_2D, sunTexture);
+        glBindVertexArray(sphereVAO); // Buena práctica re-bindearlo
         glDrawElements(GL_TRIANGLES, sphereIndices.size(), GL_UNSIGNED_INT, 0);
 
         // Renderizado de los planetas
@@ -350,6 +358,9 @@ int main() {
         renderPlanet(ourShader, saturn, sphereVAO, sphereIndices, deltaTime);
         renderPlanet(ourShader, uranus, sphereVAO, sphereIndices, deltaTime);
         renderPlanet(ourShader, neptune, sphereVAO, sphereIndices, deltaTime);
+
+        // Actualizar ángulo del Sol
+        sunRotationAngle = std::fmod(sunRotationAngle + sunRotationSpeed * deltaTime, 360.0f); // <-- NUEVO
 
         // Intercambio de buffers y eventos
         glfwSwapBuffers(window);
