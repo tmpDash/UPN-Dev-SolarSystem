@@ -54,6 +54,8 @@
 
 CG-SolarSystem-Final/x64/Debug/*.exe
 CG-SolarSystem-Final/enc_temp_folder/
+CG-SolarSystem-Final/x64/Debug/
+
 
 # Paquetes NuGet
 packages/ # La carpeta donde se descargan los paquetes (no el packages.config)
