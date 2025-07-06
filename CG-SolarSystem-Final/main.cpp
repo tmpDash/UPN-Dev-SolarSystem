@@ -5,17 +5,19 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include <vector>
-#include "Shader.h"
-#include <iostream>
-#include <cmath>
-
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
-
 #include <imgui.h>
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+
+#include <iostream>
+#include <vector>
+#include <string>
+#include <cmath>
+
+#include "Shader.h"
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 using namespace std;
 
@@ -64,7 +66,7 @@ struct Meteorite {
 	float     initialDelay;
 };
 
-GLuint loadTexture(const char* path);
+GLuint loadTexture(const char* path, GLuint fallbackTextureID);
 void renderPlanet(Shader& shader, Planet& planet, unsigned int sphereVAO,
 	const vector<unsigned int>& sphereIndices, float deltaTime, const glm::mat4& view, const glm::mat4& projection);
 void renderTextIn3DSpace(const std::string& text, glm::vec3 worldPos, const glm::mat4& view, const glm::mat4& projection);
@@ -165,18 +167,27 @@ int main() {
 
 	glBindVertexArray(0);
 
-	GLuint galaxyTexture = loadTexture("textures/galaxy.jpg");
-	GLuint sunTexture = loadTexture("textures/sun.jpg");
-	GLuint mercuryTexture = loadTexture("textures/mercury.jpg");
-	GLuint venusTexture = loadTexture("textures/venus.jpg");
-	GLuint earthTexture = loadTexture("textures/earth.jpg");
-	GLuint moonTexture = loadTexture("textures/moon.jpg");
-	GLuint marsTexture = loadTexture("textures/mars.jpg");
-	GLuint jupiterTexture = loadTexture("textures/jupiter.jpg");
-	GLuint saturnTexture = loadTexture("textures/saturn.jpg");
-	GLuint saturnRingTexture = loadTexture("textures/saturn_ring.png");
-	GLuint uranusTexture = loadTexture("textures/uranus.jpg");
-	GLuint neptuneTexture = loadTexture("textures/neptune.jpg");
+	GLuint errorTexture = loadTexture("textures/error.png", 0);
+	if (errorTexture == 0) {
+		// Si ni siquiera la textura de error se puede cargar, es un problema grave.
+		// Podríamos terminar el programa o intentar crear una proceduralmente.
+		cout << "CRITICAL ERROR: Could not load the placeholder error texture. Exiting." << endl;
+		glfwTerminate();
+		return -1;
+	}
+
+	GLuint galaxyTexture = loadTexture("textures/galaxy.jpg", errorTexture);
+	GLuint sunTexture = loadTexture("textures/sun.jpg", errorTexture);
+	GLuint mercuryTexture = loadTexture("textures/mercury.jpg", errorTexture);
+	GLuint venusTexture = loadTexture("textures/venus.jpg", errorTexture);
+	GLuint earthTexture = loadTexture("textures/earth.jpg", errorTexture);
+	GLuint moonTexture = loadTexture("textures/moon.jpg", errorTexture);
+	GLuint marsTexture = loadTexture("textures/mars.jpg", errorTexture);
+	GLuint jupiterTexture = loadTexture("textures/jupiter.jpg", errorTexture);
+	GLuint saturnTexture = loadTexture("textures/saturn.jpg", errorTexture);
+	GLuint saturnRingTexture = loadTexture("textures/saturn_ring.png", errorTexture);
+	GLuint uranusTexture = loadTexture("textures/uranus.jpg", errorTexture);
+	GLuint neptuneTexture = loadTexture("textures/neptune.jpg", errorTexture);
 
 	Planet mercury = {
 		"Mercurio", 1.5f, 47.9f, 0.0f, 0.017f, 0.0f, 0.15f, mercuryTexture,
@@ -537,7 +548,7 @@ void createCircle(std::vector<float>& vertices, int numSegments) {
 	}
 }
 
-GLuint loadTexture(const char* path) {
+GLuint loadTexture(const char* path, GLuint fallbackTextureID) {
 	GLuint textureID;
 	glGenTextures(1, &textureID);
 	int width, height, nrComponents;
@@ -556,12 +567,14 @@ GLuint loadTexture(const char* path) {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-		cout << "Textura cargada con exito: " << path << endl;
 	}
 	else {
 		cout << "Error al cargar la textura: " << path << endl;
 		cout << "Motivo del error (stb_image): " << stbi_failure_reason() << endl;
+
+		glDeleteTextures(1, &textureID);
+
+		return fallbackTextureID;
 	}
 	stbi_image_free(data);
 	return textureID;
@@ -579,7 +592,7 @@ void renderTextIn3DSpace(const std::string& text, glm::vec3 worldPos, const glm:
 }
 
 void renderPlanet(Shader& shader, Planet& planet, unsigned int sphereVAO,
-	const vector<unsigned int>& sphereIndices, float deltaTime, const glm::mat4& view, const glm::mat4& projection) { 
+	const vector<unsigned int>& sphereIndices, float deltaTime, const glm::mat4& view, const glm::mat4& projection) {
 
 	planet.orbitAngle = std::fmod(planet.orbitAngle + planet.orbitSpeed * deltaTime, 360.0f);
 	planet.rotationAngle = std::fmod(planet.rotationAngle + planet.rotationSpeed * deltaTime, 360.0f);
