@@ -67,9 +67,9 @@ struct Meteorite {
 };
 
 GLuint loadTexture(const char* path, GLuint fallbackTextureID);
-void renderPlanet(Shader& shader, Planet& planet, unsigned int sphereVAO,
-	const vector<unsigned int>& sphereIndices, float deltaTime, const glm::mat4& view, const glm::mat4& projection);
+void renderPlanet(Shader& shader, Planet& planet, unsigned int sphereVAO, const vector<unsigned int>& sphereIndices, float deltaTime, const glm::mat4& view, const glm::mat4& projection);
 void renderTextIn3DSpace(const std::string& text, glm::vec3 worldPos, const glm::mat4& view, const glm::mat4& projection);
+void renderUI();
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
 	if (action == GLFW_PRESS || action == GLFW_REPEAT) {
@@ -189,45 +189,47 @@ int main() {
 	GLuint uranusTexture = loadTexture("textures/uranus.jpg", errorTexture);
 	GLuint neptuneTexture = loadTexture("textures/neptune.jpg", errorTexture);
 
-	Planet mercury = {
+	std::vector<Planet> planets;
+
+	planets.push_back({
 		"Mercurio", 1.5f, 47.9f, 0.0f, 0.017f, 0.0f, 0.15f, mercuryTexture,
 		false, 0.0f, 0.0f, 0.0f, 0, false, 0
-	};
+		});
 
-	Planet venus = {
+	planets.push_back({
 		"Venus", 2.0f, 35.0f, 0.0f, 0.004f, 0.0f, 0.25f, venusTexture,
 		false, 0.0f, 0.0f, 0.0f, 0, false, 0
-	};
+		});
 
-	Planet earth = {
+	planets.push_back({
 		"Tierra", 3.5f, 30.0f, 0.0f, 60.0f, 0.0f, 0.3f, earthTexture,
 		true, 0.7f, 200.0f, 0.0f, moonTexture, false, 0
-	};
+		});
 
-	Planet mars = {
+	planets.push_back({
 		"Marte", 4.5f, 24.1f, 0.0f, 31.0f, 0.0f, 0.2f, marsTexture,
 		false, 0.0f, 0.0f, 0.0f, 0, false, 0
-	};
+		});
 
-	Planet jupiter = {
+	planets.push_back({
 		"Jupiter", 6.0f, 13.1f, 0.0f, 28.0f, 0.0f, 0.5f, jupiterTexture,
 		false, 0.0f, 0.0f, 0.0f, 0, false, 0
-	};
+		});
 
-	Planet saturn = {
+	planets.push_back({
 		"Saturno", 7.5f, 9.7f, 0.0f, 22.0f, 0.0f, 0.45f, saturnTexture,
 		false, 0.0f, 0.0f, 0.0f, 0, true, saturnRingTexture
-	};
+		});
 
-	Planet uranus = {
+	planets.push_back({
 		"Urano", 9.0f, 6.8f, 0.0f, 17.0f, 0.0f, 0.4f, uranusTexture,
 		false, 0.0f, 0.0f, 0.0f, 0, false, 0
-	};
+		});
 
-	Planet neptune = {
+	planets.push_back({
 		"Neptuno", 10.5f, 5.4f, 0.0f, 16.0f, 0.0f, 0.38f, neptuneTexture,
 		false, 0.0f, 0.0f, 0.0f, 0, false, 0
-	};
+		});
 
 	std::vector<Meteorite> meteorites;
 	const int MAX_METEORITES = 6;
@@ -403,39 +405,11 @@ int main() {
 
 			glBindVertexArray(orbitVAO);
 
-			glm::mat4 model_orbit = glm::mat4(1.0f);
-
-			model_orbit = glm::scale(glm::mat4(1.0f), glm::vec3(mercury.orbitRadius));
-			orbitShader.setMat4("model", model_orbit);
-			glDrawArrays(GL_LINE_STRIP, 0, orbitSegments + 1);
-
-			model_orbit = glm::scale(glm::mat4(1.0f), glm::vec3(venus.orbitRadius));
-			orbitShader.setMat4("model", model_orbit);
-			glDrawArrays(GL_LINE_STRIP, 0, orbitSegments + 1);
-
-			model_orbit = glm::scale(glm::mat4(1.0f), glm::vec3(earth.orbitRadius));
-			orbitShader.setMat4("model", model_orbit);
-			glDrawArrays(GL_LINE_STRIP, 0, orbitSegments + 1);
-
-			model_orbit = glm::scale(glm::mat4(1.0f), glm::vec3(mars.orbitRadius));
-			orbitShader.setMat4("model", model_orbit);
-			glDrawArrays(GL_LINE_STRIP, 0, orbitSegments + 1);
-
-			model_orbit = glm::scale(glm::mat4(1.0f), glm::vec3(jupiter.orbitRadius));
-			orbitShader.setMat4("model", model_orbit);
-			glDrawArrays(GL_LINE_STRIP, 0, orbitSegments + 1);
-
-			model_orbit = glm::scale(glm::mat4(1.0f), glm::vec3(saturn.orbitRadius));
-			orbitShader.setMat4("model", model_orbit);
-			glDrawArrays(GL_LINE_STRIP, 0, orbitSegments + 1);
-
-			model_orbit = glm::scale(glm::mat4(1.0f), glm::vec3(uranus.orbitRadius));
-			orbitShader.setMat4("model", model_orbit);
-			glDrawArrays(GL_LINE_STRIP, 0, orbitSegments + 1);
-
-			model_orbit = glm::scale(glm::mat4(1.0f), glm::vec3(neptune.orbitRadius));
-			orbitShader.setMat4("model", model_orbit);
-			glDrawArrays(GL_LINE_STRIP, 0, orbitSegments + 1);
+			for (const auto& planet : planets) {
+				glm::mat4 model_orbit = glm::scale(glm::mat4(1.0f), glm::vec3(planet.orbitRadius));
+				orbitShader.setMat4("model", model_orbit);
+				glDrawArrays(GL_LINE_STRIP, 0, orbitSegments + 1);
+			}
 		}
 
 		ourShader.use();
@@ -444,14 +418,9 @@ int main() {
 			sunRotationAngle = std::fmod(sunRotationAngle + sunRotationSpeed * effectiveDeltaTime, 360.0f);
 		}
 
-		renderPlanet(ourShader, mercury, sphereVAO, sphereIndices, effectiveDeltaTime, view, projection);
-		renderPlanet(ourShader, venus, sphereVAO, sphereIndices, effectiveDeltaTime, view, projection);
-		renderPlanet(ourShader, earth, sphereVAO, sphereIndices, effectiveDeltaTime, view, projection);
-		renderPlanet(ourShader, mars, sphereVAO, sphereIndices, effectiveDeltaTime, view, projection);
-		renderPlanet(ourShader, jupiter, sphereVAO, sphereIndices, effectiveDeltaTime, view, projection);
-		renderPlanet(ourShader, saturn, sphereVAO, sphereIndices, effectiveDeltaTime, view, projection);
-		renderPlanet(ourShader, uranus, sphereVAO, sphereIndices, effectiveDeltaTime, view, projection);
-		renderPlanet(ourShader, neptune, sphereVAO, sphereIndices, effectiveDeltaTime, view, projection);
+		for (auto& planet : planets) {
+			renderPlanet(ourShader, planet, sphereVAO, sphereIndices, effectiveDeltaTime, view, projection);
+		}
 
 		if (showNames) {
 			renderTextIn3DSpace("Sol", glm::vec3(0.0f, 1.5f, 0.0f), view, projection);
