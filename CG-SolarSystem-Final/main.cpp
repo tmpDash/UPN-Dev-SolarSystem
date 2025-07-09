@@ -1,9 +1,12 @@
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
+// ===========================================
+// Sistema Solar 3D Interactivo con OpenGL
+// ===========================================
+// Este programa renderiza una simulación del sistema solar con planetas,
+// órbitas, lunas y efectos visuales usando OpenGL 3.3 Core Profile.
 
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
+// Librerías principales de OpenGL
+#include <glad/glad.h>     // Cargador de funciones OpenGL
+#include <GLFW/glfw3.h>    // Gestión de ventanas y entrada
 
 #include <imgui.h>
 #include "imgui_impl_glfw.h"
@@ -21,49 +24,88 @@
 
 using namespace std;
 
+// ===========================================
+// CONFIGURACIÓN GLOBAL Y VARIABLES DE ESTADO
+// ===========================================
+
+// Dimensiones de la ventana de renderizado
 const unsigned int SCR_WIDTH = 1280;
 const unsigned int SCR_HEIGHT = 768;
 
-float cameraPitch = 0.0f;
-float pitchSpeed = 30.0f;
-const float maxPitch = 80.0f;
-const float minPitch = -80.0f;
-const float pitchIncrement = pitchSpeed * 0.016f;
+// Variables de control de cámara
+float cameraPitch = 0.0f;                          // Ángulo de inclinación actual de la cámara (grados)
+float pitchSpeed = 30.0f;                          // Velocidad de rotación de la cámara (grados/segundo)
+const float maxPitch = 90.0f;                      // Límite superior de inclinación para evitar gimbal lock
+const float minPitch = -90.0f;                     // Límite inferior de inclinación
+const float pitchIncrement = pitchSpeed * 0.016f;  // Incremento por frame (asumiendo ~60 FPS)
 
-bool showNames = false;
-bool animationPaused = false;
-bool showOrbits = true;
-bool showMeteorites = false;
-int meteoriteCount = 3;
+// variables para el movimiento del mouse
+bool firstMouse = true;	// Primera vez que se mueve el mouse
+bool mouseControleEnabled = false; // Inicializamos el control del mouse deshabilitado
+float lastMouseY = SCR_HEIGHT / 2.0f; // Última posición Y del mouse
+float lastMouseX = SCR_WIDTH / 2.0f; // ultima posición X del mouse
+float mouseSensitivity = 0.5f;  // Sensibilidad del movimiento 
+float cameraYaw = 0.0f; // rotación horizontal
 
+
+
+// Variables de estado de la interfaz
+bool showNames = false;        // Mostrar/ocultar nombres de planetas
+bool animationPaused = false;  // Pausar/reanudar animación del sistema solar
+bool showOrbits = true;        // Mostrar/ocultar líneas de órbita
+bool showMeteorites = false;   // Activar/desactivar lluvia de meteoritos
+int meteoriteCount = 3;        // Cantidad de meteoritos activos simultáneamente
+
+
+// ===========================================
+// ESTRUCTURAS DE DATOS
+// ===========================================
+
+/**
+ * Estructura que representa un cuerpo celeste (planeta) en el sistema solar.
+ * Contiene todas las propiedades necesarias para su renderizado y animación.
+ */
 struct Planet {
-	string name;
-	float orbitRadius;
-	float orbitSpeed;
-	float orbitAngle;
-	float rotationSpeed;
-	float rotationAngle;
-	float size;
-	GLuint texture;
-	bool hasMoon;
-	float moonDistance;
-	float moonSpeed;
-	float moonAngle;
-	GLuint moonTexture;
-	bool hasRing;
-	GLuint ringTexture;
+	// Propiedades básicas
+	string name;           // Nombre del planeta para mostrar en pantalla
+	float orbitRadius;     // Radio de la órbita alrededor del sol (unidades arbitrarias)
+	float orbitSpeed;      // Velocidad de traslación orbital (grados/segundo)
+	float orbitAngle;      // Ángulo actual en la órbita (0-360 grados)
+	float rotationSpeed;   // Velocidad de rotación sobre su propio eje (grados/segundo)
+	float rotationAngle;   // Ángulo actual de rotación (0-360 grados)
+	float size;            // Tamaño relativo del planeta (factor de escala)
+	GLuint texture;        // ID de la textura OpenGL para la superficie del planeta
+	
+	// Propiedades de satélites (Luna)
+	bool hasMoon;          // Indica si el planeta tiene luna
+	float moonDistance;    // Distancia de la luna al planeta (unidades relativas)
+	float moonSpeed;       // Velocidad orbital de la luna (grados/segundo)
+	float moonAngle;       // Ángulo actual de la luna en su órbita
+	GLuint moonTexture;    // ID de la textura para la luna
+	
+	// Propiedades de anillos (Saturno)
+	bool hasRing;          // Indica si el planeta tiene anillos
+	GLuint ringTexture;    // ID de la textura para los anillos
 };
+
+
+
+
 
 void createCircle(std::vector<float>& vertices, int numSegments);
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void createSphere(vector<float>& vertices, vector<unsigned int>& indices);
 
+/**
+ * Estructura que representa un meteorito en el sistema de partículas.
+ * Los meteoritos se mueven diagonalmente a través de la pantalla.
+ */
 struct Meteorite {
-	glm::vec3 position;
-	glm::vec3 velocity;
-	bool      isVisible;
-	float     timeToAppear;
-	float     initialDelay;
+	glm::vec3 position;     // Posición actual en coordenadas normalizadas (-1 a 1)
+	glm::vec3 velocity;     // Vector de velocidad y dirección del movimiento
+	bool      isVisible;    // Estado de visibilidad actual
+	float     timeToAppear; // Tiempo futuro en el que aparecerá (no usado actualmente)
+	float     initialDelay; // Retraso inicial antes de la primera aparición
 };
 
 GLuint loadTexture(const char* path, GLuint fallbackTextureID);
@@ -71,20 +113,94 @@ void renderPlanet(Shader& shader, Planet& planet, unsigned int sphereVAO, const 
 void renderTextIn3DSpace(const std::string& text, glm::vec3 worldPos, const glm::mat4& view, const glm::mat4& projection);
 void renderUI();
 
+/**
+ * https://www.glfw.org/docs/3.3/input_guide.html#input_key
+ * Callback para manejar eventos de teclado.
+ * Controla la inclinación de la cámara usando las teclas de flecha.
+ * 
+ * @param window  Ventana GLFW que recibió el evento
+ * @param key     Código de la tecla presionada
+ * @param scancode Código de escaneo específico del sistema
+ * @param action  Tipo de acción (GLFW_PRESS, GLFW_REPEAT)
+ * @param mods    Modificadores activos (Shift, Ctrl, Alt)
+ */
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+	// Solo procesar eventos de presión o repetición de tecla
 	if (action == GLFW_PRESS || action == GLFW_REPEAT) {
 		if (key == GLFW_KEY_UP) {
-			cameraPitch += pitchSpeed * 0.016f;
+			// Inclinar cámara hacia arriba
+			cameraPitch += pitchIncrement;
+			// Limitar el ángulo máximo para evitar que la cámara se voltee
 			if (cameraPitch > maxPitch) cameraPitch = maxPitch;
 		}
 		else if (key == GLFW_KEY_DOWN) {
-			cameraPitch -= pitchSpeed * 0.016f;
+			// Inclinar cámara hacia abajo
+			cameraPitch -= pitchIncrement;
+			// Limitar el ángulo mínimo
 			if (cameraPitch < minPitch) cameraPitch = minPitch;
 		}
 		else if (key == GLFW_KEY_R) {
+			// Tecla R: Resetear la vista a la posición horizontal
 			cameraPitch = 0.0f;
+			cameraYaw = 0.0f; // reiniciamos yaw en 0
+			firstMouse = true; 
+			
+		}
+		else if (key == GLFW_KEY_M) {
+			// deshabilitamos el mov del mouse
+			if (mouseControleEnabled == true) {
+				mouseControleEnabled = false;
+			}
+			else
+			{
+				mouseControleEnabled = true;
+			}
 		}
 	}
+}
+
+
+/*
+https://www.glfw.org/docs/3.3/input_guide.html#input_mouse
+
+*/
+void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
+	if (!mouseControleEnabled) return; // si está desactivado no aplicar movimiento
+
+	// inicializamos la posición para evitar un salto brusco
+	if (firstMouse) {
+		lastMouseY = ypos;
+		lastMouseX = xpos;
+		firstMouse = false;
+		return;
+	}
+
+	// calcular el offset vertical 
+	float yoffset = lastMouseY - ypos; // Invertido: mover arriba 
+	lastMouseY = ypos; //actualizamos la posicicón en lastMouseY
+	// calcular el offset horizontal
+	float xoffset = lastMouseX - xpos; // movimiento horizontal
+	lastMouseX = xpos; // actualizamos la posición en lastMouseX
+
+	
+	// aplicamos la sensibilidad y actualizamos el pitch
+	yoffset *= mouseSensitivity;
+	cameraPitch += yoffset;
+
+	xoffset *= mouseSensitivity; // aplicamos sesiblidad del mov para x
+	cameraYaw += xoffset; // actualizamoz el yaw
+
+
+	// aplicamos limite superior e inferior (pitch)
+	if (cameraPitch > maxPitch) cameraPitch = maxPitch;
+	if (cameraPitch < minPitch) cameraPitch = minPitch;
+
+	// aplicamos limites para yaw 0° a 360°
+
+	if (cameraYaw > 360.0f) cameraYaw -= 360.0f;
+	if (cameraYaw < 0.0f) cameraYaw += 360.0f;
+
+
 }
 
 int main() {
@@ -102,6 +218,7 @@ int main() {
 	glfwMakeContextCurrent(window);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 	glfwSetKeyCallback(window, key_callback);
+	glfwSetCursorPosCallback(window, mouse_callback);
 
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
 		cout << "Fallo al inicializar GLAD" << endl;
@@ -170,7 +287,7 @@ int main() {
 	GLuint errorTexture = loadTexture("textures/error.png", 0);
 	if (errorTexture == 0) {
 		// Si ni siquiera la textura de error se puede cargar, es un problema grave.
-		// Podr�amos terminar el programa o intentar crear una proceduralmente.
+		// Podr�amos terminar el programa o intentar crear una proceduralmente.
 		cout << "CRITICAL ERROR: Could not load the placeholder error texture. Exiting." << endl;
 		glfwTerminate();
 		return -1;
@@ -310,6 +427,8 @@ int main() {
 
 		ImGui::SeparatorText("Navegacion");
 
+		ImGui::Checkbox("Habilitar mouse", &mouseControleEnabled);
+
 		if (ImGui::Button("Resetear Vista", ImVec2(-1, 0))) {
 			cameraPitch = 0.0f;
 		}
@@ -336,6 +455,7 @@ int main() {
 
 		ImGui::Text("*Usar tambien las teclas de navegacion.");
 
+		/* Efectos de meteoritos*/
 		ImGui::SeparatorText("Efectos");
 		ImGui::Checkbox("Lluvia de meteoritos", &showMeteorites);
 
@@ -347,6 +467,7 @@ int main() {
 			}
 			ImGui::PopItemWidth();
 		}
+
 
 		ImGui::End();
 
@@ -360,23 +481,32 @@ int main() {
 		if (display_h == 0) display_h = 1;
 
 		glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)display_w / (float)display_h, 0.1f, 100.0f);
+
+		/*CONTROL DE CAMARA*/
 		float cameraDistance = 22.0f;
 		float pitchRad = glm::radians(cameraPitch);
+		float yawRad = glm::radians(cameraYaw); // agregamos el calculo de la posición con Yaw
 
-		glm::vec3 cameraPos;
-		cameraPos.x = 0.0f;
-		cameraPos.y = cameraDistance * sin(pitchRad);
-		cameraPos.z = cameraDistance * cos(pitchRad);
+		glm::vec3 cameraPos; // vector tridimencional
+		/*cameraPos.x = 0.0f; // Siempre en X = 0
+		cameraPos.y = cameraDistance * sin(pitchRad); // Altura según el pitch
+		cameraPos.z = cameraDistance * cos(pitchRad); // profundidad según el pitch*/
+		cameraPos.x = cameraDistance * cos(pitchRad) * sin(yawRad); // ahora X varia también con yaw el mov en x
+		cameraPos.y = cameraDistance * sin(pitchRad); // Altura según el pitch
+		cameraPos.z = cameraDistance * cos(pitchRad) * cos(yawRad); // profundidad según el pitch
 
-		glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
-		if (abs(cameraPitch) > 70.0f) {
-			float factor = (90.0f - abs(cameraPitch)) / 20.0f;
-			cameraUp.y = factor;
+		glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f); //Vector Up - (0, 1, 0) significa: "arriba es la dirección Y positiva"
+		//prevencion del gimbalLock
+		if (abs(cameraPitch) > 70.0f) { // angulo peligroso?
+			float factor = (90.0f - abs(cameraPitch)) / 20.0f; // calculo del factor de transición
+			cameraUp.y = factor; // ajustamos el componente Y 
 			cameraUp.z = (cameraPitch > 0) ? -(1.0f - factor) : (1.0f - factor);
-			cameraUp = glm::normalize(cameraUp);
+			cameraUp = glm::normalize(cameraUp); // Normaliza el vector up, es decir se establece la longitud en 1. https://stackoverflow.com/questions/17327906/what-glmnormalize-does
 		}
 
-		glm::mat4 view = glm::lookAt(cameraPos, glm::vec3(0.0f, 0.0f, 0.0f), cameraUp);
+		// glm::mat4 se usa para transformaciones geometricas en gráficos 3D, rotaciones, traslaciones y escalas
+		// glm::lookAt define la orientación de la camara en el espacio 3D, recibe 3 parametros (Posciion de la camara, punto objetivo, vector up)
+		glm::mat4 view = glm::lookAt(cameraPos, glm::vec3(0.0f, 0.0f, 0.0f), cameraUp); 
 		ourShader.setMat4("projection", projection);
 		ourShader.setMat4("view", view);
 
@@ -465,6 +595,7 @@ int main() {
 	return 0;
 }
 
+//Función que actualiza el tamaño de la vetnana cuando cambian las dimensiones https://www.glfw.org/docs/3.3/window_guide.html#window_full_screen
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 	glViewport(0, 0, width, height);
 }
@@ -520,23 +651,32 @@ void createCircle(std::vector<float>& vertices, int numSegments) {
 GLuint loadTexture(const char* path, GLuint fallbackTextureID) {
 	GLuint textureID;
 	glGenTextures(1, &textureID);
-	int width, height, nrComponents;
-	unsigned char* data = stbi_load(path, &width, &height, &nrComponents, 0);
+	int width, height, nrComponents; //nrComponentes = Canales
+	unsigned char* data = stbi_load(path, &width, &height, &nrComponents, 0); //Carga la imagen que carga en la ruta 
+																			 // extraera la información del ancho, alto, canales y 0 es un flag; & permite el cambio de valores
+	// si hay daa
 	if (data) {
 		GLenum format;
 		if (nrComponents == 1) format = GL_RED;
+		//3 canales (RGB)
 		else if (nrComponents == 3) format = GL_RGB;
+		//4 canales (RGBA)
 		else if (nrComponents == 4) format = GL_RGBA;
 
 		glBindTexture(GL_TEXTURE_2D, textureID);
 		glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
 		glGenerateMipmap(GL_TEXTURE_2D);
 
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+		//Configuramos los parametros de la textura, es decir cómo se va a comportar dentro del programa 
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); // Linea vertical
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT); // Linea Horizontal
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR); // MIN_FILTER es cuando la imagen se reduce o scala mas pequeño 
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR); // MAG_FILTER es cuando la imagen se agranda o scala mas grande
+
+		cout << "Textura cargada con exito: " << path << endl;
 	}
+	// si no hay data
 	else {
 		cout << "Error al cargar la textura: " << path << endl;
 		cout << "Motivo del error (stb_image): " << stbi_failure_reason() << endl;
@@ -545,6 +685,7 @@ GLuint loadTexture(const char* path, GLuint fallbackTextureID) {
 
 		return fallbackTextureID;
 	}
+	// liberamos la memoria usada por la imagen
 	stbi_image_free(data);
 	return textureID;
 }
