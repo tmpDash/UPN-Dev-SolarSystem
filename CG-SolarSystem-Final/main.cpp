@@ -56,6 +56,17 @@ bool showOrbits = true;        // Mostrar/ocultar líneas de órbita
 bool showMeteorites = false;   // Activar/desactivar lluvia de meteoritos
 int meteoriteCount = 3;        // Cantidad de meteoritos activos simultáneamente
 
+/**
+ * Variables para controlar la visualización y funcionalidad de la tabla educativa
+ */
+bool showEducationalTable = true;          // Mostrar/ocultar tabla principal
+bool showAdvancedData = false;             // Mostrar datos avanzados (masa, atmósfera)
+bool showOnlyRockyPlanets = false;         // Filtro: solo planetas rocosos
+bool showOnlyGasGiants = false;            // Filtro: solo gigantes gaseosos
+bool highlightEarthComparisons = false;    // Resaltar comparaciones con la Tierra
+int selectedPlanetForComparison = 2;       // Planeta seleccionado para comparación (2 = Tierra)
+bool showFunFacts = true;
+
 
 // ===========================================
 // ESTRUCTURAS DE DATOS
@@ -88,6 +99,132 @@ struct Planet {
 	GLuint ringTexture;    // ID de la textura para los anillos
 };
 
+/*Información educativa de planetas*/
+struct PlanetData {
+	string name;               // Nombre del planeta
+	float distanceFromSunAU;        // Distancia promedio del Sol (Unidades Astronómicas)
+	float distanceFromSunKM;        // Distancia en millones de kilómetros
+	float orbitPeriodDays;          // Período orbital (cuánto dura un "año")
+	float rotationPeriodHours;      // Período de rotación (cuánto dura un "día")
+	float diameterKM;               // Diámetro ecuatorial en kilómetros
+	float massEarths;               // Masa relativa a la Tierra (Tierra = 1.0)
+	string planetType;         // Tipo: "Rocoso" o "Gaseoso"
+	string atmosphere;         // Composición atmosférica principal
+	string funFact;            // Dato curioso para engagement estudiantil
+	ImVec4 highlightColor;          // Color para resaltar en la tabla
+};
+
+
+/**
+ * Array con datos astronómicos reales de todos los planetas
+ * Fuentes: NASA Planetary Fact Sheet, JPL, ESA
+ */
+PlanetData planetEducationalData[] = {
+	{
+		"☿ Mercurio",
+		0.39f,                          // 0.39 UA del Sol
+		57.9f,                          // 57.9 millones de km
+		88.0f,                          // 88 días terrestres por órbita
+		1407.6f,                        // 1407.6 horas por día (58.6 días terrestres)
+		4879.0f,                        // 4,879 km de diámetro
+		0.055f,                         // 5.5% de la masa terrestre
+		"Rocoso",
+		"Sin atmósfera",
+		"Un día dura más que un año",
+		ImVec4(0.8f, 0.7f, 0.6f, 1.0f) // Color gris-dorado
+	},
+	{
+		"♀ Venus",
+		0.72f,                          // 0.72 UA del Sol
+		108.2f,                         // 108.2 millones de km
+		225.0f,                         // 225 días terrestres
+		5832.5f,                        // 5832.5 horas (243 días terrestres)
+		12104.0f,                       // 12,104 km de diámetro
+		0.815f,                         // 81.5% de la masa terrestre
+		"Rocoso",
+		"CO₂ denso (96%)",
+		"Rota al revés (retrógrado)",
+		ImVec4(1.0f, 0.8f, 0.4f, 1.0f) // Color amarillo-naranja
+	},
+	{
+		"🌍 Tierra",
+		1.0f,                           // 1.0 UA del Sol (definición de UA)
+		149.6f,                         // 149.6 millones de km
+		365.25f,                        // 365.25 días (año terrestre)
+		24.0f,                          // 24 horas (día terrestre)
+		12756.0f,                       // 12,756 km de diámetro
+		1.0f,                           // 100% masa terrestre (referencia)
+		"Rocoso",
+		"N₂ (78%), O₂ (21%)",
+		"Único planeta con vida conocida",
+		ImVec4(0.4f, 0.8f, 1.0f, 1.0f) // Color azul terrestre
+	},
+	{
+		"♂ Marte",
+		1.52f,                          // 1.52 UA del Sol
+		227.9f,                         // 227.9 millones de km
+		687.0f,                         // 687 días terrestres
+		24.6f,                          // 24.6 horas (similar a la Tierra)
+		6792.0f,                        // 6,792 km de diámetro
+		0.107f,                         // 10.7% de la masa terrestre
+		"Rocoso",
+		"CO₂ (95%), N₂ (3%)",
+		"Tiene las montañas más altas del sistema solar",
+		ImVec4(1.0f, 0.5f, 0.3f, 1.0f) // Color rojizo
+	},
+	{
+		"♃ Júpiter",
+		5.20f,                          // 5.20 UA del Sol
+		778.5f,                         // 778.5 millones de km
+		4333.0f,                        // 4,333 días terrestres (11.9 años)
+		9.9f,                           // 9.9 horas (día más corto)
+		142984.0f,                      // 142,984 km de diámetro
+		317.8f,                         // 317.8 veces la masa terrestre
+		"Gaseoso",
+		"H₂ (89%), He (10%)",
+		"Más masivo que todos los otros planetas juntos",
+		ImVec4(0.9f, 0.7f, 0.5f, 1.0f) // Color marrón-naranja
+	},
+	{
+		"♄ Saturno",
+		9.58f,                          // 9.58 UA del Sol
+		1432.0f,                        // 1,432 millones de km
+		10747.0f,                       // 10,747 días terrestres (29.4 años)
+		10.7f,                          // 10.7 horas
+		120536.0f,                      // 120,536 km de diámetro
+		95.2f,                          // 95.2 veces la masa terrestre
+		"Gaseoso",
+		"H₂ (96%), He (3%)",
+		"Flotaría en agua (densidad < 1 g/cm³)",
+		ImVec4(1.0f, 0.9f, 0.7f, 1.0f) // Color dorado claro
+	},
+	{
+		"♅ Urano",
+		19.20f,                         // 19.20 UA del Sol
+		2867.0f,                        // 2,867 millones de km
+		30589.0f,                       // 30,589 días terrestres (83.7 años)
+		17.2f,                          // 17.2 horas
+		51118.0f,                       // 51,118 km de diámetro
+		14.5f,                          // 14.5 veces la masa terrestre
+		"Gigante de hielo",
+		"H₂ (83%), He (15%), CH₄ (2%)",
+		"Rota de lado (inclinación 98°)",
+		ImVec4(0.4f, 0.8f, 0.9f, 1.0f) // Color azul-verde
+	},
+	{
+		"♆ Neptuno",
+		30.05f,                         // 30.05 UA del Sol
+		4515.0f,                        // 4,515 millones de km
+		59800.0f,                       // 59,800 días terrestres (163.7 años)
+		16.1f,                          // 16.1 horas
+		49528.0f,                       // 49,528 km de diámetro
+		17.1f,                          // 17.1 veces la masa terrestre
+		"Gigante de hielo",
+		"H₂ (80%), He (19%), CH₄ (1%)",
+		"Vientos más rápidos del sistema solar (2,100 km/h)",
+		ImVec4(0.2f, 0.4f, 1.0f, 1.0f) // Color azul profundo
+	}
+};
 
 
 
@@ -199,9 +336,270 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
 
 	if (cameraYaw > 360.0f) cameraYaw -= 360.0f;
 	if (cameraYaw < 0.0f) cameraYaw += 360.0f;
-
-
 }
+
+// PASO 5: FUNCIÓN DE RENDERIZADO DE LA TABLA
+// ===========================================
+/**
+ * Renderiza la tabla principal con datos planetarios
+ * Incluye filtros, colores y formateo responsivo
+ */
+void renderPlanetDataTable() {
+	// Calcular número de columnas según opciones activas
+	int columnCount = 4; // Básicas: Planeta, Distancia, Año, Día
+	if (showAdvancedData) columnCount += 3; // +Diámetro, +Masa, +Atmósfera
+	if (showFunFacts) columnCount += 1;     // +Dato Curioso
+
+	// Configurar tabla con scroll y redimensionamiento
+	ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders |
+		ImGuiTableFlags_RowBg |
+		ImGuiTableFlags_Resizable |
+		ImGuiTableFlags_ScrollY |
+		ImGuiTableFlags_Sortable;
+
+	// Altura fija para scroll si hay muchos datos
+	ImVec2 tableSize = ImVec2(0.0f, showAdvancedData ? 300.0f : 250.0f);
+
+	if (ImGui::BeginTable("PlanetEducationalTable", columnCount, tableFlags, tableSize)) {
+
+		// CONFIGURAR COLUMNAS
+		ImGui::TableSetupColumn("🪐 Planeta", ImGuiTableColumnFlags_NoSort);
+		ImGui::TableSetupColumn("📏 Distancia", ImGuiTableColumnFlags_DefaultSort);
+		ImGui::TableSetupColumn("🗓️ Año (días)", ImGuiTableColumnFlags_DefaultSort);
+		ImGui::TableSetupColumn("⏰ Día (horas)", ImGuiTableColumnFlags_DefaultSort);
+
+		if (showAdvancedData) {
+			ImGui::TableSetupColumn("📐 Diámetro (km)", ImGuiTableColumnFlags_DefaultSort);
+			ImGui::TableSetupColumn("⚖️ Masa (Tierras)", ImGuiTableColumnFlags_DefaultSort);
+			ImGui::TableSetupColumn("🌬️ Atmósfera", ImGuiTableColumnFlags_NoSort);
+		}
+
+		if (showFunFacts) {
+			ImGui::TableSetupColumn("💡 Dato Curioso", ImGuiTableColumnFlags_NoSort);
+		}
+
+		// RENDERIZAR ENCABEZADOS
+		ImGui::TableHeadersRow();
+
+		// RENDERIZAR DATOS DE CADA PLANETA
+		for (int i = 0; i < 8; i++) {
+			auto& planet = planetEducationalData[i];
+
+			// APLICAR FILTROS
+			if (showOnlyRockyPlanets && planet.planetType != "Rocoso") continue;
+			if (showOnlyGasGiants && (planet.planetType == "Rocoso")) continue;
+
+			ImGui::TableNextRow();
+
+			// COLUMNA 1: NOMBRE DEL PLANETA (con color)
+			ImGui::TableNextColumn();
+			if (highlightEarthComparisons && i == selectedPlanetForComparison) {
+				ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, IM_COL32(100, 200, 100, 50));
+			}
+			ImGui::TextColored(planet.highlightColor, "%s", planet.name.c_str());
+			ImGui::TextDisabled("(%s)", planet.planetType.c_str());
+
+			// COLUMNA 2: DISTANCIA DEL SOL
+			ImGui::TableNextColumn();
+			ImGui::Text("%.2f UA", planet.distanceFromSunAU);
+			ImGui::TextDisabled("(%.0f M km)", planet.distanceFromSunKM);
+			if (highlightEarthComparisons && i != 2) { // No comparar Tierra consigo misma
+				float ratio = planet.distanceFromSunAU / planetEducationalData[2].distanceFromSunAU;
+				ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.0f, 1.0f), "%.1fx", ratio);
+			}
+
+			// COLUMNA 3: PERÍODO ORBITAL (AÑO)
+			ImGui::TableNextColumn();
+			ImGui::Text("%.0f días", planet.orbitPeriodDays);
+			if (planet.orbitPeriodDays >= 365) {
+				float years = planet.orbitPeriodDays / 365.25f;
+				ImGui::TextDisabled("(%.1f años)", years);
+			}
+			if (highlightEarthComparisons && i != 2) {
+				float ratio = planet.orbitPeriodDays / planetEducationalData[2].orbitPeriodDays;
+				ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.0f, 1.0f), "%.1fx", ratio);
+			}
+
+			// COLUMNA 4: PERÍODO DE ROTACIÓN (DÍA)
+			ImGui::TableNextColumn();
+			ImGui::Text("%.1f h", planet.rotationPeriodHours);
+			if (planet.rotationPeriodHours >= 24) {
+				float days = planet.rotationPeriodHours / 24.0f;
+				ImGui::TextDisabled("(%.1f días)", days);
+			}
+			if (highlightEarthComparisons && i != 2) {
+				float ratio = planet.rotationPeriodHours / planetEducationalData[2].rotationPeriodHours;
+				ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.0f, 1.0f), "%.1fx", ratio);
+			}
+
+			// COLUMNAS AVANZADAS (si están activadas)
+			if (showAdvancedData) {
+				// COLUMNA 5: DIÁMETRO
+				ImGui::TableNextColumn();
+				ImGui::Text("%.0f km", planet.diameterKM);
+				if (highlightEarthComparisons && i != 2) {
+					float ratio = planet.diameterKM / planetEducationalData[2].diameterKM;
+					ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.0f, 1.0f), "%.1fx", ratio);
+				}
+
+				// COLUMNA 6: MASA
+				ImGui::TableNextColumn();
+				ImGui::Text("%.2f 🌍", planet.massEarths);
+
+				// COLUMNA 7: ATMÓSFERA
+				ImGui::TableNextColumn();
+				ImGui::TextWrapped("%s", planet.atmosphere.c_str());
+			}
+
+			// COLUMNA: DATO CURIOSO (si está activada)
+			if (showFunFacts) {
+				ImGui::TableNextColumn();
+				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.8f, 0.9f, 1.0f, 1.0f));
+				ImGui::TextWrapped("%s", planet.funFact.c_str());
+				ImGui::PopStyleColor();
+			}
+		}
+
+		ImGui::EndTable();
+	}
+}
+
+
+// PASO 6: FUNCIÓN DE INFORMACIÓN COMPARATIVA
+// ===========================================
+/**
+ * Muestra información detallada del planeta seleccionado
+ * Incluye comparaciones y datos de contexto
+ */
+void renderPlanetComparisonInfo() {
+	if (selectedPlanetForComparison < 0 || selectedPlanetForComparison >= 8) return;
+
+	auto& planet = planetEducationalData[selectedPlanetForComparison];
+	auto& earth = planetEducationalData[2]; // Tierra como referencia
+
+	ImGui::SeparatorText("🔍 Información Detallada");
+
+	// Información del planeta seleccionado
+	ImGui::Text("Planeta seleccionado:");
+	ImGui::SameLine();
+	ImGui::TextColored(planet.highlightColor, "%s", planet.name.c_str());
+
+	// Crear dos columnas para comparaciones
+	if (ImGui::BeginTable("ComparisonTable", 2, ImGuiTableFlags_Borders)) {
+		ImGui::TableSetupColumn("Característica");
+		ImGui::TableSetupColumn("Valor y Comparación");
+		ImGui::TableHeadersRow();
+
+		// Distancia del Sol
+		ImGui::TableNextRow();
+		ImGui::TableNextColumn(); ImGui::Text("Distancia del Sol");
+		ImGui::TableNextColumn();
+		ImGui::Text("%.2f UA (%.0f millones de km)", planet.distanceFromSunAU, planet.distanceFromSunKM);
+		if (selectedPlanetForComparison != 2) {
+			float ratio = planet.distanceFromSunAU / earth.distanceFromSunAU;
+			ImGui::SameLine();
+			ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.0f, 1.0f), " → %.1fx más %s que la Tierra",
+				abs(ratio), ratio > 1.0f ? "lejos" : "cerca");
+		}
+
+		// Tamaño
+		ImGui::TableNextRow();
+		ImGui::TableNextColumn(); ImGui::Text("Tamaño");
+		ImGui::TableNextColumn();
+		ImGui::Text("%.0f km de diámetro", planet.diameterKM);
+		if (selectedPlanetForComparison != 2) {
+			float ratio = planet.diameterKM / earth.diameterKM;
+			ImGui::SameLine();
+			ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.0f, 1.0f), " → %.1fx %s que la Tierra",
+				ratio, ratio > 1.0f ? "más grande" : "más pequeño");
+		}
+
+		// Masa
+		ImGui::TableNextRow();
+		ImGui::TableNextColumn(); ImGui::Text("Masa");
+		ImGui::TableNextColumn();
+		ImGui::Text("%.2f veces la masa terrestre", planet.massEarths);
+
+		// Tipo de planeta
+		ImGui::TableNextRow();
+		ImGui::TableNextColumn(); ImGui::Text("Tipo");
+		ImGui::TableNextColumn();
+		ImGui::Text("%s", planet.planetType.c_str());
+
+		// Atmósfera
+		ImGui::TableNextRow();
+		ImGui::TableNextColumn(); ImGui::Text("Atmósfera");
+		ImGui::TableNextColumn();
+		ImGui::TextWrapped("%s", planet.atmosphere.c_str());
+
+		ImGui::EndTable();
+	}
+
+	// Dato curioso destacado
+	ImGui::Spacing();
+	ImGui::TextColored(ImVec4(0.8f, 1.0f, 0.8f, 1.0f), "💡 Dato curioso:");
+	ImGui::TextWrapped("%s", planet.funFact.c_str());
+}
+
+// PASO 4: FUNCIÓN PRINCIPAL DE RENDERIZADO DE LA TABLA
+// =====================================================
+/**
+ * Función principal que renderiza toda la interfaz educativa
+ * Incluye controles, filtros y la tabla de datos
+ */
+void renderEducationalInterface() {
+	// Sección de la tabla educativa
+	ImGui::SeparatorText("📚 Información Astronómica");
+
+	// Controles principales
+	ImGui::Checkbox("Mostrar tabla de datos", &showEducationalTable);
+
+	if (!showEducationalTable) return; // Si está desactivada, no mostrar nada más
+
+	// Controles de visualización
+	ImGui::SameLine();
+	ImGui::Checkbox("Datos avanzados", &showAdvancedData);
+	ImGui::SameLine();
+	ImGui::Checkbox("Datos curiosos", &showFunFacts);
+
+	// Filtros de tipo de planeta
+	ImGui::SeparatorText("🔍 Filtros");
+
+	if (ImGui::RadioButton("Todos los planetas", !showOnlyRockyPlanets && !showOnlyGasGiants)) {
+		showOnlyRockyPlanets = false;
+		showOnlyGasGiants = false;
+	}
+	ImGui::SameLine();
+	if (ImGui::RadioButton("Solo rocosos", showOnlyRockyPlanets)) {
+		showOnlyRockyPlanets = true;
+		showOnlyGasGiants = false;
+	}
+	ImGui::SameLine();
+	if (ImGui::RadioButton("Solo gaseosos", showOnlyGasGiants)) {
+		showOnlyRockyPlanets = false;
+		showOnlyGasGiants = true;
+	}
+
+	// Herramientas de comparación
+	ImGui::SeparatorText("⚖️ Comparaciones");
+	ImGui::Checkbox("Resaltar comparaciones con la Tierra", &highlightEarthComparisons);
+
+	// Selector de planeta para comparación
+	const char* planetNames[] = { "Mercurio", "Venus", "Tierra", "Marte", "Júpiter", "Saturno", "Urano", "Neptuno" };
+	ImGui::SetNextItemWidth(150);
+	ImGui::Combo("Comparar con", &selectedPlanetForComparison, planetNames, 8);
+
+	// Renderizar la tabla principal
+	renderPlanetDataTable();
+
+	// Sección de información adicional
+	if (selectedPlanetForComparison >= 0 && selectedPlanetForComparison < 8) {
+		renderPlanetComparisonInfo();
+	}
+}
+
+
+
 
 int main() {
 	glfwInit();
@@ -468,6 +866,7 @@ int main() {
 			ImGui::PopItemWidth();
 		}
 
+		renderEducationalInterface();
 
 		ImGui::End();
 
