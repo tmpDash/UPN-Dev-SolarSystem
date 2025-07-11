@@ -1463,31 +1463,3 @@ int main() {
     glfwTerminate();
     return 0;
 }
-
-// ===========================================
-// FIN DEL PROGRAMA
-// ===========================================
-// 
-// RESUMEN DE FUNCIONALIDADES IMPLEMENTADAS:
-// - Sistema de cámara con controles pitch/yaw
-// - 8 planetas con datos astronómicos reales
-// - Tabla educativa con información detallada
-// - Efectos visuales (meteoritos, órbitas)
-// - Interfaz de usuario completa
-// - Sistema de texturas con fallback
-// - Prevención de gimbal lock
-// - Controles de teclado y mouse
-// - Animaciones fluidas con deltaTime
-// 
-// CONTROLES:
-// - Flechas ↑↓: Control de pitch (inclinación)
-// - Mouse: Control libre (si está habilitado)
-// - R: Reset de vista
-// - M: Toggle control de mouse
-// - UI: Múltiples opciones de personalización
-// 
-// PROPÓSITO EDUCATIVO:
-// Simulador interactivo del sistema solar diseñado para
-// estudiantes de nivel primario/secundario, combinando
-// visualización 3D con datos astronómicos precisos.
-// ==========================================
